@@ -44,7 +44,7 @@ total_reward = 0
 steps = []
 agent = Agent(state_size=env.observation_space.shape[0], number_of_actions=env.action_space.n)
 
-for i_episode in range(20):
+for i_episode in range(200):
     observation = env.reset()
     for t in range(200):
         env.render()
