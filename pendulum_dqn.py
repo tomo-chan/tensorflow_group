@@ -4,12 +4,12 @@ from collections import deque
 import numpy as np
 import tensorflow as tf
 
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.0001
 DISCOUNT_RATE = 0.99
 EPISODE_NUM = 5000
 BATCH_SIZE = 100
-EPSILON = 1
-EPSILON_DECAY = 0.005
+EPSILON = 0.1
+EPSILON_DECAY = 0.0001
 HIDDEN_LAYERS = [100,100,100]
 EXP_SIZE = 1000
 
@@ -71,16 +71,16 @@ with tf.Session() as sess:
         observation = env.reset()
         total_reward = 0.0
         for t in range(200):
-            env.render()
+            # env.render()
             # 初回と2回目以降で配列の形が異なるのでここで整える
             observation = np.reshape(observation,[STATE_NUM])
             if np.random.random() < epsilon:
                 action = env.action_space.sample()
             else:
                 action = sess.run(q_net, feed_dict={input: [observation]})[0]
-            action = [2.0] if action[0] > 0 else [-2.0]
+            # action = [2.0] if action[0] > 0 else [-2.0]
             prev_observation = observation
-            epsilon = epsilon - EPSILON_DECAY if epsilon > 0 else epsilon
+            # epsilon = epsilon - EPSILON_DECAY if epsilon > 0 else epsilon
             observation, reward, done, info = env.step(action)
             replay_memory.append((prev_observation, action, reward, observation, done))
             total_reward += reward
@@ -100,6 +100,8 @@ with tf.Session() as sess:
                     action_t = sess.run(tar_net, feed_dict={target: [ns_batch]})[0]
                     target_batch.append(r_batch if done_batch else r_batch + DISCOUNT_RATE * action_t)
 
+                input_batch = np.reshape(input_batch, [minibatch_size, STATE_NUM])
+                target_batch = np.reshape(target_batch, [minibatch_size, 1])
                 sess.run(optimizer, feed_dict={input: input_batch, q_val: target_batch})
                 for op in tar_ops:
                     sess.run(op)
