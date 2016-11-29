@@ -4,13 +4,13 @@ from collections import deque
 import numpy as np
 import tensorflow as tf
 
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 DISCOUNT_RATE = 0.99
 EPISODE_NUM = 5000
 BATCH_SIZE = 100
-EPSILON = 0.1
-EPSILON_DECAY = 0.0001
-HIDDEN_LAYERS = [100,100,100]
+EPSILON = 1
+EPSILON_DECAY = 0.00005
+HIDDEN_LAYERS = [200,200]
 EXP_SIZE = 1000
 
 replay_memory = deque(maxlen=EXP_SIZE)
@@ -54,7 +54,7 @@ tar_net, var_tar, bias_tar = create_q_net('tar_net', target, STATE_NUM)
 
 q_val = tf.placeholder(tf.float32, [None, ACTION_NUM])
 loss = tf.reduce_mean(tf.square(q_net - q_val))
-optimizer = tf.train.RMSPropOptimizer(learning_rate=LEARNING_RATE).minimize(loss)
+optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(loss)
 
 tar_ops = []
 for v_q,v_tar,b_q,b_tar in zip(var_q, var_tar, bias_q, bias_tar):
@@ -80,15 +80,19 @@ with tf.Session() as sess:
                 action = sess.run(q_net, feed_dict={input: [observation]})[0]
             # action = [2.0] if action[0] > 0 else [-2.0]
             prev_observation = observation
-            # epsilon = epsilon - EPSILON_DECAY if epsilon > 0 else epsilon
+            epsilon = epsilon - EPSILON_DECAY if epsilon > 0 else epsilon
             observation, reward, done, info = env.step(action)
             replay_memory.append((prev_observation, action, reward, observation, done))
             total_reward += reward
-            if (not t == 0 and t % (BATCH_SIZE-1) == 0) or done:
+            for k in range(5):
+                if len(replay_memory) <= BATCH_SIZE:
+                    break
+            # if (not t == 0 and t % (BATCH_SIZE-1) == 0) or done:
                 target_batch = []
                 input_batch = []
+                reward_batch = []
                 minibatch_size = min(len(replay_memory), BATCH_SIZE)
-                minibatch_indexes = np.random.randint(0, len(replay_memory), minibatch_size)
+                minibatch_indexes = np.random.choice(len(replay_memory), minibatch_size)
                 for i in minibatch_indexes:
                     s_batch = replay_memory[i][0]
                     a_batch = replay_memory[i][1]
@@ -97,11 +101,15 @@ with tf.Session() as sess:
                     done_batch = replay_memory[i][4]
 
                     input_batch.append(s_batch)
-                    action_t = sess.run(tar_net, feed_dict={target: [ns_batch]})[0]
-                    target_batch.append(r_batch if done_batch else r_batch + DISCOUNT_RATE * action_t)
+                    target_batch.append(ns_batch)
+                    reward_batch.append(r_batch)
 
                 input_batch = np.reshape(input_batch, [minibatch_size, STATE_NUM])
-                target_batch = np.reshape(target_batch, [minibatch_size, 1])
+                ns_batch = np.reshape(target_batch, [minibatch_size, STATE_NUM])
+
+                target_value = sess.run(tar_net, feed_dict={target: ns_batch})
+                target_batch = np.reshape(reward_batch, [minibatch_size, 1]) + DISCOUNT_RATE * target_value
+
                 sess.run(optimizer, feed_dict={input: input_batch, q_val: target_batch})
                 for op in tar_ops:
                     sess.run(op)
