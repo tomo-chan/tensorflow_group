@@ -1,3 +1,5 @@
+# coding:utf-8
+
 import gym
 
 from collections import deque
@@ -6,15 +8,15 @@ import tensorflow as tf
 
 LEARNING_RATE = 0.01
 DISCOUNT_RATE = 0.99
-EPISODE_NUM = 1000
-BATCH_SIZE = 100
+EPISODE_NUM = 150
+BATCH_SIZE = 20
 EPSILON = 1
 EPSILON_MIN = 0.1
-EPSILON_DECAY = 0.005
+EPSILON_DECAY = 0.0001
 EXPLORATION = 1000
 HIDDEN_LAYERS = [100,100,100]
 EXP_SIZE = 1000
-SKIP_TRAIN_COUNT = 10
+SKIP_TRAIN_COUNT = 1
 COPY_WEIGHT_COUNT = 20
 
 env = gym.make('Pendulum-v0')
