@@ -139,6 +139,6 @@ with tf.Session() as sess:
 
                     if done:
                         break
-        print("{},{}".format(i_episode+1, total_reward))
+        print("{},{},{}".format(i_episode+1, total_reward, epsilon))
     env.monitor.close()
 
