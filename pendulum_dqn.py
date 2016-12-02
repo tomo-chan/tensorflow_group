@@ -88,6 +88,8 @@ with tf.Session() as sess:
             else:
                 action_index = np.argmax(sess.run(q_net, feed_dict={input: [observation]}))
             # action = [2.0] if action[0] > 0 else [-2.0]
+            if epsilon > EPSILON_MIN:
+                epsilon -= EPSILON_DECAY
             prev_observation = observation
             observation, reward, done, info = env.step(actions[action_index])
             replay_memory.append((prev_observation, action_index, reward, observation, done))
@@ -132,8 +134,6 @@ with tf.Session() as sess:
                         for op in tar_ops:
                             sess.run(op)
                         # print('after:{},{}'.format(sess.run(var_q[0])[0][0], sess.run(var_tar[0])[0][0]))
-
-                    epsilon = epsilon - EPSILON_DECAY if epsilon > EPSILON_MIN and EXPLORATION < t+i_episode*200 else epsilon
 
                     if done:
                         break
