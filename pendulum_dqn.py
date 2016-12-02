@@ -83,12 +83,10 @@ with tf.Session() as sess:
         total_reward = 0.0
         for t in range(200):
             env.render()
-            # 初回と2回目以降で配列の形が異なるのでここで整える
-            observation = np.reshape(observation,[STATE_NUM])
             if np.random.random() < epsilon:
                 action_index = np.random.choice(ACTION_NUM, 1)[0]
             else:
-                action_index = action = np.argmax(sess.run(q_net, feed_dict={input: [observation]}))
+                action_index = np.argmax(sess.run(q_net, feed_dict={input: [observation]}))
             # action = [2.0] if action[0] > 0 else [-2.0]
             prev_observation = observation
             observation, reward, done, info = env.step(actions[action_index])
