@@ -1,3 +1,5 @@
+# coding:utf-8
+
 import gym
 
 from collections import deque
@@ -6,16 +8,17 @@ import tensorflow as tf
 
 LEARNING_RATE = 0.01
 DISCOUNT_RATE = 0.99
-EPISODE_NUM = 1000
-BATCH_SIZE = 100
+EPISODE_NUM = 150
+BATCH_SIZE = 20
 EPSILON = 1
 EPSILON_MIN = 0.1
-EPSILON_DECAY = 0.005
+EPSILON_DECAY = 0.0001
 EXPLORATION = 1000
 HIDDEN_LAYERS = [100,100,100]
 EXP_SIZE = 1000
-SKIP_TRAIN_COUNT = 10
+SKIP_TRAIN_COUNT = 1
 COPY_WEIGHT_COUNT = 20
+RESULT_PATH = "result/pendulum"
 
 env = gym.make('Pendulum-v0')
 
@@ -76,18 +79,19 @@ with tf.Session() as sess:
     for op in tar_ops:
         sess.run(op)
     epsilon = EPSILON
+    env.monitor.start(RESULT_PATH, force=True)
     for i_episode in range(EPISODE_NUM):
         observation = env.reset()
         total_reward = 0.0
         for t in range(200):
             env.render()
-            # 初回と2回目以降で配列の形が異なるのでここで整える
-            observation = np.reshape(observation,[STATE_NUM])
             if np.random.random() < epsilon:
                 action_index = np.random.choice(ACTION_NUM, 1)[0]
             else:
-                action_index = action = np.argmax(sess.run(q_net, feed_dict={input: [observation]}))
+                action_index = np.argmax(sess.run(q_net, feed_dict={input: [observation]}))
             # action = [2.0] if action[0] > 0 else [-2.0]
+            if epsilon > EPSILON_MIN:
+                epsilon -= EPSILON_DECAY
             prev_observation = observation
             observation, reward, done, info = env.step(actions[action_index])
             replay_memory.append((prev_observation, action_index, reward, observation, done))
@@ -133,9 +137,8 @@ with tf.Session() as sess:
                             sess.run(op)
                         # print('after:{},{}'.format(sess.run(var_q[0])[0][0], sess.run(var_tar[0])[0][0]))
 
-                    epsilon = epsilon - EPSILON_DECAY if epsilon > EPSILON_MIN and EXPLORATION < t+i_episode*200 else epsilon
-
                     if done:
                         break
-        print("{},{}".format(i_episode+1, total_reward))
+        print("{},{},{}".format(i_episode+1, total_reward, epsilon))
+    env.monitor.close()
 
