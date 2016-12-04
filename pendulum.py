@@ -15,7 +15,6 @@ EPSILON_MIN = 0.0
 EPSILON_DECAY = 0.0005
 HIDDEN_LAYERS = [100,100,100]
 EXP_SIZE = 1000
-EXP_SIZE = 1000
 
 EPISODE_NUM = 150
 SKIP_TRAIN_COUNT = 5
@@ -29,10 +28,10 @@ env = gym.make('Pendulum-v0')
 
 np.random.seed(100)
 
-# actions = np.asarray([env.action_space.low, env.action_space.high])
-distance = 1.0
-actions = np.arange(env.action_space.low[0], env.action_space.high[0]+distance, distance)
-actions = np.reshape(actions, [len(actions),1])
+actions = np.asarray([env.action_space.low, env.action_space.high])
+# distance = 1.0
+# actions = np.arange(env.action_space.low[0], env.action_space.high[0]+distance, distance)
+# actions = np.reshape(actions, [len(actions),1])
 
 STATE_NUM = env.observation_space.shape[0]
 ACTION_NUM = len(actions)
@@ -54,18 +53,23 @@ with tf.Session() as sess:
         observation = env.reset()
         total_reward = 0.0
         for t in range(200):
-            # env.render()
+            env.render()
             action_index = agent.get_action(observation)
             agent.decrease_epsilon()
             prev_observation = observation
             observation, reward, done, info = env.step(actions[action_index])
             agent.add_experience(prev_observation, action_index, reward, observation, done)
             total_reward += reward
+
+            # 中bんけんけんがたまるまで学習をスキップ
             if EXP_SIZE <= step:
+                # 一定間隔で学習する
                 if step % SKIP_TRAIN_COUNT == 0 or done:
+                    # 連続学習
                     for k in range(TRANING_COUNT):
                       agent.train()
 
+                # 一定間隔で重みをTarget networkにコピー
                 if step % COPY_WEIGHT_COUNT == 0:
                     agent.copy_network()
 
