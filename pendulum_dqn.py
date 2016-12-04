@@ -19,6 +19,7 @@ EXP_SIZE = 1000
 SKIP_TRAIN_COUNT = 1
 COPY_WEIGHT_COUNT = 20
 RESULT_PATH = "result/pendulum"
+IS_SAVE = False
 
 env = gym.make('Pendulum-v0')
 
@@ -79,7 +80,8 @@ with tf.Session() as sess:
     for op in tar_ops:
         sess.run(op)
     epsilon = EPSILON
-    env.monitor.start(RESULT_PATH, force=True)
+    if IS_SAVE:
+        env.monitor.start(RESULT_PATH, force=True)
     for i_episode in range(EPISODE_NUM):
         observation = env.reset()
         total_reward = 0.0
@@ -140,5 +142,7 @@ with tf.Session() as sess:
                     if done:
                         break
         print("{},{},{}".format(i_episode+1, total_reward, epsilon))
-    env.monitor.close()
+    if IS_SAVE:
+        env.monitor.close()
 
+        
