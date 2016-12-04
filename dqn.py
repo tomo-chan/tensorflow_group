@@ -12,6 +12,9 @@ class qnetwork(object):
         self.hidden_layer_size = hidden_layer_size
 
     def create_network(self, name, input):
+        '''
+        指定されたパラメータからネットワークを作成します。
+        '''
         in_layer = input
         node_num = self.input_size
         variables = []
@@ -37,52 +40,65 @@ class qnetwork(object):
         return q_net, variables, biases
 
     def leaky_relu(self, x, alpha=0.2):
+        '''
+        Leaky Leru関数を実行します。
+        '''
         return tf.maximum(alpha*x,x)
 
 class agent(object):
   
     def __init__(self, sess, state_size, action_num, learning_rate=0.01, discount_rate=0.99, batch_size=100,
             epsilon=1, epsilon_end=0, epsilon_decay=0.0005, experience_size=1000, hidden_layer_size=[100,100]):
-        self.sess              = sess
-        self.state_size        = state_size
-        self.action_num        = action_num
-        self.learning_rate     = learning_rate
-        self.discount_rate     = discount_rate
-        self.batch_size        = batch_size
-        self.epsilon           = epsilon
-        self.epsilon_end       = epsilon_end
-        self.epsilon_decay     = epsilon_decay
-        self.experience_size   = experience_size
-        self.hidden_layer_size = hidden_layer_size
+        self.sess              = sess               # TensorflowのSession
+        self.state_size        = state_size         # 入力状態数
+        self.action_num        = action_num         # 行動数
+        self.learning_rate     = learning_rate      # 学習率
+        self.discount_rate     = discount_rate      # 割引率
+        self.batch_size        = batch_size         # 学習のバッチサイズ
+        self.epsilon           = epsilon            # ε-greedyのε
+        self.epsilon_end       = epsilon_end        # εの最小値
+        self.epsilon_decay     = epsilon_decay      # εの減衰率
+        self.experience_size   = experience_size    # Replay experienceに蓄積するメモリ数
+        self.hidden_layer_size = hidden_layer_size  # Q networkの各隠れ層のノード数
 
-        self.D = deque(maxlen=self.experience_size)
+        self.D = deque(maxlen=self.experience_size) # Replay experience
         
+        # Tensorflowでは最初にネットワークを定義する必要がある。
+
         model = qnetwork(self.state_size, self.action_num, self.hidden_layer_size)
 
+        # Q networkとTarget networkを作成する
         self.input_state = tf.placeholder(tf.float32, [None, self.state_size])
         self.q_network, var_q, bias_q = model.create_network("q_net", self.input_state)
         self.target_state = tf.placeholder(tf.float32, [None, self.state_size])
         self.target_network, var_tar, bias_tar = model.create_network("target_net", self.target_state)
 
+        # Q networkからTarget networkに重みとバイアスをコピーする
         tar_ops = []
         for v_q,v_tar,b_q,b_tar in zip(var_q, var_tar, bias_q, bias_tar):
             tar_ops.append(v_tar.assign(v_q))
             tar_ops.append(b_tar.assign(b_q))
         self.target_ops = tar_ops
 
+        # 誤差計算
         self.y_value = tf.placeholder(tf.float32, [None, self.action_num])
         loss = tf.reduce_mean(tf.square(self.y_value - self.q_network))
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(loss)
     
     def train(self):
+        '''
+        ネットワークをトレーニングする
+        '''
         s, a, r, ns, done = self.get_experiences() 
-        q_value = self.sess.run(self.q_network, feed_dict={self.input_state: s})
+        q_value = self.sess.run(self.q_network, feed_dict={self.input_state: s}) # 経験値のQ値を取得する
 
-        target_value = self.sess.run(self.target_network, feed_dict={self.target_state: ns})
+        target_value = self.sess.run(self.target_network, feed_dict={self.target_state: ns}) # Target networkからQ値を取得する
         target_value_index = np.argmax(target_value, axis=1)
         for i in range(self.batch_size):
+            # 教師信号を計算する
             q_value[i][a[i]] = r[i] if done[i] else r[i] + self.discount_rate * target_value[i][target_value_index[i]]
 
+        # 誤差計算
         self.sess.run(self.optimizer, feed_dict={self.input_state: s, self.y_value: q_value})
 
     def copy_network(self):
@@ -90,6 +106,9 @@ class agent(object):
             self.sess.run(op)
     
     def get_action(self, state):
+        '''
+        ε-greedy法で行動選択する
+        '''
         if np.random.random() < self.epsilon:
             action_index = np.random.choice(self.action_num, 1)[0]
         else:
@@ -97,6 +116,9 @@ class agent(object):
         return action_index
     
     def decrease_epsilon(self):
+        '''
+        εを減衰させます
+        '''
         if self.epsilon > self.epsilon_end:
             self.epsilon -= self.epsilon_decay
     
@@ -104,6 +126,9 @@ class agent(object):
         self.D.append((state, action, reward, next_state, done))
 
     def get_experiences(self):
+        '''
+        蓄積された経験からランダムにバッチ数分取得します
+        '''
         input_batch = []
         action_batch = []
         reward_batch = []
