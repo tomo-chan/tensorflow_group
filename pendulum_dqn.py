@@ -9,15 +9,16 @@ import tensorflow as tf
 LEARNING_RATE = 0.01
 DISCOUNT_RATE = 0.99
 EPISODE_NUM = 150
-BATCH_SIZE = 20
+BATCH_SIZE = 100
 EPSILON = 1
 EPSILON_MIN = 0.1
-EPSILON_DECAY = 0.0001
+EPSILON_DECAY = 0.0005
 EXPLORATION = 1000
 HIDDEN_LAYERS = [100,100,100]
 EXP_SIZE = 1000
 SKIP_TRAIN_COUNT = 1
 COPY_WEIGHT_COUNT = 20
+TRANING_COUNT = 1
 RESULT_PATH = "result/pendulum"
 IS_SAVE = False
 
@@ -98,40 +99,40 @@ with tf.Session() as sess:
             observation, reward, done, info = env.step(actions[action_index])
             replay_memory.append((prev_observation, action_index, reward, observation, done))
             total_reward += reward
-            # for k in range(1):
             if EXP_SIZE <= len(replay_memory):
                 if (t+1) % SKIP_TRAIN_COUNT == 0 or done:
-                    input_batch = []
-                    action_batch = []
-                    reward_batch = []
-                    target_batch = []
-                    done_batch = []
-                    minibatch_size = min(len(replay_memory), BATCH_SIZE)
-                    minibatch_indexes = np.random.choice(len(replay_memory), minibatch_size)
-                    for i in minibatch_indexes:
-                        s_batch = replay_memory[i][0]
-                        a_batch = replay_memory[i][1]
-                        r_batch = replay_memory[i][2]
-                        ns_batch = replay_memory[i][3]
-                        d_batch = replay_memory[i][4]
+                    for k in range(TRANING_COUNT):
+                        input_batch = []
+                        action_batch = []
+                        reward_batch = []
+                        target_batch = []
+                        done_batch = []
+                        minibatch_size = min(len(replay_memory), BATCH_SIZE)
+                        minibatch_indexes = np.random.choice(len(replay_memory), minibatch_size)
+                        for i in minibatch_indexes:
+                            s_batch = replay_memory[i][0]
+                            a_batch = replay_memory[i][1]
+                            r_batch = replay_memory[i][2]
+                            ns_batch = replay_memory[i][3]
+                            d_batch = replay_memory[i][4]
 
-                        input_batch.append(s_batch)
-                        action_batch.append(a_batch)
-                        reward_batch.append(r_batch)
-                        target_batch.append(ns_batch)
-                        done_batch.append(d_batch)
+                            input_batch.append(s_batch)
+                            action_batch.append(a_batch)
+                            reward_batch.append(r_batch)
+                            target_batch.append(ns_batch)
+                            done_batch.append(d_batch)
 
-                    input_batch = np.reshape(input_batch, [minibatch_size, STATE_NUM])
-                    ns_batch = np.reshape(target_batch, [minibatch_size, STATE_NUM])
-                    value_batch = sess.run(q_net, feed_dict={input: input_batch})
+                        input_batch = np.reshape(input_batch, [minibatch_size, STATE_NUM])
+                        ns_batch = np.reshape(target_batch, [minibatch_size, STATE_NUM])
+                        value_batch = sess.run(q_net, feed_dict={input: input_batch})
 
-                    target_value = sess.run(tar_net, feed_dict={target: ns_batch})
-                    target_value_index = np.argmax(target_value, axis=1)
-                    for i in range(minibatch_size):
-                        value_batch[i][action_batch[i]] = reward_batch[i] if done_batch[i] else reward_batch[i] + DISCOUNT_RATE * target_value[i][target_value_index[i]]
+                        target_value = sess.run(tar_net, feed_dict={target: ns_batch})
+                        target_value_index = np.argmax(target_value, axis=1)
+                        for i in range(minibatch_size):
+                            value_batch[i][action_batch[i]] = reward_batch[i] if done_batch[i] else reward_batch[i] + DISCOUNT_RATE * target_value[i][target_value_index[i]]
 
-                    sess.run(optimizer, feed_dict={input: input_batch, q_val: value_batch})
-                    # print("loss: {}".format(sess.run(loss, feed_dict={input: input_batch, q_val: value_batch})))
+                        sess.run(optimizer, feed_dict={input: input_batch, q_val: value_batch})
+                        # print("loss: {}".format(sess.run(loss, feed_dict={input: input_batch, q_val: value_batch})))
 
                 if (t+1) % COPY_WEIGHT_COUNT == 0:
                     # print('before:{},{}'.format(sess.run(var_q[0])[0][0], sess.run(var_tar[0])[0][0]))
