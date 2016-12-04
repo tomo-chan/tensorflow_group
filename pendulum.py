@@ -61,7 +61,7 @@ with tf.Session() as sess:
             agent.add_experience(prev_observation, action_index, reward, observation, done)
             total_reward += reward
 
-            # 中bんけんけんがたまるまで学習をスキップ
+            # 経験が貯まるまで学習をスキップ
             if EXP_SIZE <= step:
                 # 一定間隔で学習する
                 if step % SKIP_TRAIN_COUNT == 0 or done:
