@@ -133,7 +133,7 @@ with tf.Session() as sess:
                     sess.run(optimizer, feed_dict={input: input_batch, q_val: value_batch})
                     # print("loss: {}".format(sess.run(loss, feed_dict={input: input_batch, q_val: value_batch})))
 
-                    if t % COPY_WEIGHT_COUNT == 0:
+                    if (t+1) % COPY_WEIGHT_COUNT == 0:
                         # print('before:{},{}'.format(sess.run(var_q[0])[0][0], sess.run(var_tar[0])[0][0]))
                         for op in tar_ops:
                             sess.run(op)
@@ -145,4 +145,3 @@ with tf.Session() as sess:
     if IS_SAVE:
         env.monitor.close()
 
-        
