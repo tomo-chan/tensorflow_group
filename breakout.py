@@ -7,16 +7,16 @@ import tensorflow as tf
 
 import dqn_image as dqn
 
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 DISCOUNT_RATE = 0.99
-BATCH_SIZE = 100
+BATCH_SIZE = 32
 EPSILON = 1.0
-EPSILON_MIN = 0.0
-EPSILON_DECAY = 0.00001
+EPSILON_MIN = 0.1
+EPSILON_DECAY = 1/10000
 HIDDEN_LAYERS = [256]
 EXP_SIZE = 10000
 
-EPISODE_NUM = 100000
+EPISODE_NUM = 10000
 SKIP_TRAIN_COUNT = 4
 COPY_WEIGHT_COUNT = 20
 TRANING_COUNT = SKIP_TRAIN_COUNT
@@ -33,7 +33,8 @@ ACTION_NUM = env.action_space.n
 tf.reset_default_graph()
 
 with tf.Session() as sess:
-    agent = dqn.agent(sess, image_height=210, image_width=160, image_channels=3, action_num=ACTION_NUM, batch_size=BATCH_SIZE, hidden_layer_size=HIDDEN_LAYERS, cnn_layer_size=[])
+    agent = dqn.agent(sess, image_height=210, image_width=160, image_channels=3, action_num=ACTION_NUM, batch_size=BATCH_SIZE, 
+    hidden_layer_size=HIDDEN_LAYERS, cnn_layer_size=[], epsilon_decay=EPSILON_DECAY, epsilon_end=EPSILON_MIN, experience_size=EXP_SIZE)
 
     init = tf.initialize_all_variables()
     sess.run(init)
@@ -47,7 +48,7 @@ with tf.Session() as sess:
         observation = env.reset()
         total_reward = 0.0
         for t in range(200):
-            env.render()
+            # env.render()
             action = agent.get_action(observation)
             agent.decrease_epsilon()
             prev_observation = observation

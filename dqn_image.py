@@ -173,7 +173,7 @@ class agent(object):
             target_batch.append(ns_batch)
             done_batch.append(d_batch)
 
-        input_batch = np.reshape(input_batch, [self.batch_size, self.image_width, self.image_height, self.image_channels])
-        target_batch = np.reshape(target_batch, [self.batch_size, self.image_width, self.image_height, self.image_channels])
+        input_batch = np.reshape(input_batch, [self.batch_size, self.image_height, self.image_width, self.image_channels])
+        target_batch = np.reshape(target_batch, [self.batch_size, self.image_height, self.image_width, self.image_channels])
 
         return input_batch, action_batch, reward_batch, target_batch, done_batch
