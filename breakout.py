@@ -12,13 +12,13 @@ DISCOUNT_RATE = 0.99
 BATCH_SIZE = 32
 EPSILON = 1.0
 EPSILON_MIN = 0.1
-EPSILON_DECAY = 1/10000
+EPSILON_DECAY = 1/100000
 HIDDEN_LAYERS = [256]
-EXP_SIZE = 10000
+EXP_SIZE = 100
 
-EPISODE_NUM = 10000
+EPISODE_NUM = 1000
 SKIP_TRAIN_COUNT = 4
-COPY_WEIGHT_COUNT = 20
+COPY_WEIGHT_COUNT = 10000
 TRANING_COUNT = SKIP_TRAIN_COUNT
 
 RESULT_PATH = "result/breakout"
@@ -32,8 +32,12 @@ ACTION_NUM = env.action_space.n
 
 tf.reset_default_graph()
 
+target_input = tf.placeholder(tf.float32, [None, 210, 160, 3])
+processed_input = tf.image.resize_images(tf.image.rgb_to_grayscale(target_input), (84, 84))
+
 with tf.Session() as sess:
-    agent = dqn.agent(sess, image_height=210, image_width=160, image_channels=3, action_num=ACTION_NUM, batch_size=BATCH_SIZE, 
+    agent = dqn.agent(sess, image_height=84, image_width=84, image_channels=1, action_num=ACTION_NUM, batch_size=BATCH_SIZE, 
+    # agent = dqn.agent(sess, image_height=210, image_width=160, image_channels=3, action_num=ACTION_NUM, batch_size=BATCH_SIZE, 
     hidden_layer_size=HIDDEN_LAYERS, cnn_layer_size=[], epsilon_decay=EPSILON_DECAY, epsilon_end=EPSILON_MIN, experience_size=EXP_SIZE)
 
     init = tf.initialize_all_variables()
@@ -46,13 +50,16 @@ with tf.Session() as sess:
     step = 1
     for i_episode in range(EPISODE_NUM):
         observation = env.reset()
+        observation = sess.run(processed_input, feed_dict={target_input: [observation]})
         total_reward = 0.0
-        for t in range(200):
-            # env.render()
+        done = False
+        while done == False:
+            env.render()
             action = agent.get_action(observation)
             agent.decrease_epsilon()
             prev_observation = observation
             observation, reward, done, info = env.step(action)
+            observation = sess.run(processed_input, feed_dict={target_input: [observation]})
             agent.add_experience(prev_observation, action, reward, observation, done)
             total_reward += reward
 
@@ -72,7 +79,7 @@ with tf.Session() as sess:
 
             if done:
                 break
-        print("{},{},{}".format(i_episode+1, total_reward, agent.epsilon))
+        print("{},{},{},{}".format(i_episode+1, step-1, total_reward, agent.epsilon))
     if IS_SAVE:
         env.monitor.close()
 

@@ -29,6 +29,8 @@ class qnetwork(object):
                 out_layer = tf.nn.max_pool(conv2d, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
                 in_layer = out_layer
                 node_num = 64
+                variables.append(cnn_w)
+                biases.append(cnn_b)
             
             with tf.variable_scope(str(name)+'_cnn'+str(2)) as scope:
                 cnn_w = tf.Variable(tf.truncated_normal([4, 4, node_num, 32], stddev=0.1))
@@ -37,9 +39,11 @@ class qnetwork(object):
                 out_layer = tf.nn.max_pool(conv2d, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
                 in_layer = out_layer
                 node_num = 32
+                variables.append(cnn_w)
+                biases.append(cnn_b)
 
-            node_num = 2*2*node_num
-            in_layer = tf.reshape(in_layer, [-1, 2*2*32])
+            # node_num = 2*2*node_num
+            in_layer = tf.reshape(in_layer, [-1, node_num])
 
         for i, n in enumerate(self.hidden_layer_size):
             with tf.variable_scope(str(name)+'_hidden'+str(i)) as scope:
