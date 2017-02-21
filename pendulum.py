@@ -13,7 +13,7 @@ BATCH_SIZE = 100
 EPSILON = 1.0
 EPSILON_MIN = 0.0
 EPSILON_DECAY = 0.0005
-HIDDEN_LAYERS = [100,100,100]
+HIDDEN_LAYERS = [100, 100, 100]
 EXP_SIZE = 1000
 
 EPISODE_NUM = 150
@@ -39,15 +39,16 @@ ACTION_NUM = len(actions)
 tf.reset_default_graph()
 
 with tf.Session() as sess:
-    agent = dqn.agent(sess, state_size=STATE_NUM, action_num=ACTION_NUM, batch_size=BATCH_SIZE, hidden_layer_size=HIDDEN_LAYERS)
+    agent = dqn.agent(sess, state_size=STATE_NUM, action_num=ACTION_NUM, batch_size=BATCH_SIZE,
+                      hidden_layer_size=HIDDEN_LAYERS)
 
-    init = tf.initialize_all_variables()
+    init = tf.global_variables_initializer()
     sess.run(init)
     agent.copy_network()
 
     if IS_SAVE:
         env.monitor.start(RESULT_PATH, force=True)
-    
+
     step = 1
     for i_episode in range(EPISODE_NUM):
         observation = env.reset()
@@ -67,7 +68,7 @@ with tf.Session() as sess:
                 if step % SKIP_TRAIN_COUNT == 0 or done:
                     # 連続学習
                     for k in range(TRANING_COUNT):
-                      agent.train()
+                        agent.train()
 
                 # 一定間隔で重みをTarget networkにコピー
                 if step % COPY_WEIGHT_COUNT == 0:
@@ -77,7 +78,7 @@ with tf.Session() as sess:
 
             if done:
                 break
-        print("{},{},{}".format(i_episode+1, total_reward, agent.epsilon))
+        print("{},{},{}".format(i_episode + 1, total_reward, agent.epsilon))
     if IS_SAVE:
         env.monitor.close()
 
