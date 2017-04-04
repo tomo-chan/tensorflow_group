@@ -23,22 +23,22 @@ class qnetwork(object):
 
         if not self.cnn_layer_size == None:
             with tf.variable_scope(str(name)+'_cnn'+str(1)) as scope:
-                cnn_w = tf.Variable(tf.truncated_normal([8, 8, self.image_channels, 64], stddev=0.1))
-                cnn_b = tf.Variable(tf.zeros([64]))
-                conv2d = tf.nn.relu(tf.nn.conv2d(in_layer, cnn_w, strides=[1, 8, 8, 1], padding='SAME') + cnn_b)
+                cnn_w = tf.Variable(tf.truncated_normal([8, 8, self.image_channels, 32], stddev=0.1))
+                cnn_b = tf.Variable(tf.zeros([32]))
+                conv2d = tf.nn.relu(tf.nn.conv2d(in_layer, cnn_w, strides=[1, 2, 2, 1], padding='SAME') + cnn_b)
                 out_layer = tf.nn.max_pool(conv2d, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
                 in_layer = out_layer
-                node_num = 64
+                node_num = 32
                 variables.append(cnn_w)
                 biases.append(cnn_b)
             
             with tf.variable_scope(str(name)+'_cnn'+str(2)) as scope:
-                cnn_w = tf.Variable(tf.truncated_normal([4, 4, node_num, 32], stddev=0.1))
-                cnn_b = tf.Variable(tf.zeros([32]))
-                conv2d = tf.nn.relu(tf.nn.conv2d(in_layer, cnn_w, strides=[1, 4, 4, 1], padding='SAME') + cnn_b)
+                cnn_w = tf.Variable(tf.truncated_normal([4, 4, node_num, 64], stddev=0.1))
+                cnn_b = tf.Variable(tf.zeros([64]))
+                conv2d = tf.nn.relu(tf.nn.conv2d(in_layer, cnn_w, strides=[1, 2, 2, 1], padding='SAME') + cnn_b)
                 out_layer = tf.nn.max_pool(conv2d, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
                 in_layer = out_layer
-                node_num = 32
+                node_num = 64
                 variables.append(cnn_w)
                 biases.append(cnn_b)
 

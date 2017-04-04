@@ -30,17 +30,19 @@ np.random.seed(100)
 
 ACTION_NUM = env.action_space.n
 
+config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+
 tf.reset_default_graph()
 
 target_input = tf.placeholder(tf.float32, [None, 210, 160, 3])
 processed_input = tf.image.resize_images(tf.image.rgb_to_grayscale(target_input), (84, 84))
 
-with tf.Session() as sess:
+with tf.Session(config=config) as sess:
     agent = dqn.agent(sess, image_height=84, image_width=84, image_channels=1, action_num=ACTION_NUM, batch_size=BATCH_SIZE, 
     # agent = dqn.agent(sess, image_height=210, image_width=160, image_channels=3, action_num=ACTION_NUM, batch_size=BATCH_SIZE, 
     hidden_layer_size=HIDDEN_LAYERS, cnn_layer_size=[], epsilon_decay=EPSILON_DECAY, epsilon_end=EPSILON_MIN, experience_size=EXP_SIZE)
 
-    init = tf.initialize_all_variables()
+    init = tf.global_variables_initializer()
     sess.run(init)
     agent.copy_network()
 
@@ -54,7 +56,7 @@ with tf.Session() as sess:
         total_reward = 0.0
         done = False
         while done == False:
-            env.render()
+#            env.render()
             action = agent.get_action(observation)
             agent.decrease_epsilon()
             prev_observation = observation
